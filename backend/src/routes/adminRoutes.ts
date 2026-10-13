@@ -3,6 +3,10 @@ import {
   getUsers,
   approveUser,
   rejectUser,
+  inviteUser,
+  changeUserRole,
+  deleteUser,
+  toggleUserStatus,
   getAuditLogs,
   getNotifications,
   markNotificationRead,
@@ -31,8 +35,12 @@ router.put('/notifications/:id/read', markNotificationRead);
 // Admin-only endpoints
 router.use(verifyAdmin);
 router.get('/users', getUsers);
+router.post('/users/invite', inviteUser);
 router.post('/users/:id/approve', approveUser);
 router.post('/users/:id/reject', rejectUser);
+router.put('/users/:id/role', changeUserRole);
+router.put('/users/:id/status', toggleUserStatus);
+router.delete('/users/:id', deleteUser);
 router.get('/audit-logs', getAuditLogs);
 
 export default router;

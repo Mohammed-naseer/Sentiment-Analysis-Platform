@@ -3,10 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.emailRejectSubmit = exports.emailRejectForm = exports.emailApproveAction = exports.markNotificationRead = exports.getNotifications = exports.getAuditLogs = exports.rejectUser = exports.approveUser = exports.getUsers = void 0;
+exports.emailRejectSubmit = exports.emailRejectForm = exports.emailApproveAction = exports.markNotificationRead = exports.getNotifications = exports.getAuditLogs = exports.toggleUserStatus = exports.deleteUser = exports.changeUserRole = exports.inviteUser = exports.rejectUser = exports.approveUser = exports.getUsers = void 0;
 exports.generateEmailActionToken = generateEmailActionToken;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const crypto_1 = __importDefault(require("crypto"));
 const User_1 = require("../models/User");
+const Invitation_1 = require("../models/Invitation");
 const AuditLog_1 = require("../models/AuditLog");
 const Notification_1 = require("../models/Notification");
 const emailService_1 = require("../services/emailService");
@@ -156,6 +158,208 @@ const rejectUser = async (req, res) => {
     }
 };
 exports.rejectUser = rejectUser;
+/**
+ * Invite User
+ * POST /api/admin/users/invite
+ */
+const inviteUser = async (req, res) => {
+    const { email, role } = req.body;
+    const admin = req.user;
+    if (!email || !email.includes('@')) {
+        (0, response_1.sendError)(res, 'A valid email address is required.', 'ValidationError', 400);
+        return;
+    }
+    const validRoles = ['Admin', 'Analyst', 'Viewer', 'Reader'];
+    const targetRole = role && validRoles.includes(role) ? role : 'Analyst';
+    try {
+        const normalizedEmail = email.trim().toLowerCase();
+        // 1. Check if user already exists
+        const existingUser = await User_1.User.findOne({ email: normalizedEmail });
+        if (existingUser) {
+            (0, response_1.sendError)(res, `User with email "${normalizedEmail}" is already registered (Status: ${existingUser.status}, Role: ${existingUser.role}).`, 'UserAlreadyExistsError', 400);
+            return;
+        }
+        // 2. Check if a pending invite already exists
+        let invite = await Invitation_1.Invitation.findOne({ email: normalizedEmail, status: 'Pending' });
+        const token = crypto_1.default.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        if (invite) {
+            // Refresh token and expiration
+            invite.token = token;
+            invite.role = targetRole;
+            invite.expiresAt = expiresAt;
+            invite.invitedBy = admin._id;
+            await invite.save();
+        }
+        else {
+            invite = await Invitation_1.Invitation.create({
+                email: normalizedEmail,
+                role: targetRole,
+                invitedBy: admin._id,
+                token,
+                status: 'Pending',
+                expiresAt,
+            });
+        }
+        // 3. Log Audit
+        await AuditLog_1.AuditLog.create({
+            action: 'Invite',
+            adminId: admin._id,
+            assignedRole: targetRole,
+            details: `Invited ${normalizedEmail} as ${targetRole}`,
+            ipAddress: req.ip || '127.0.0.1',
+        });
+        // 4. Send email notification
+        const emailSent = await (0, emailService_1.sendInvitationEmail)({ email: normalizedEmail, role: targetRole, invitedByName: admin.name || 'Administrator' }, token);
+        (0, response_1.sendSuccess)(res, emailSent ? 'Invitation sent successfully.' : 'Invitation created (email could not be dispatched, check SMTP logs).', {
+            invitation: {
+                _id: invite._id,
+                email: invite.email,
+                role: invite.role,
+                status: invite.status,
+                expiresAt: invite.expiresAt,
+                token: invite.token,
+            },
+        }, 201);
+    }
+    catch (error) {
+        logger_1.default.error('[AdminController] Invite user failed:', error.message);
+        (0, response_1.sendError)(res, 'Unable to send invitation. Please try again.', error.message || error, 500);
+    }
+};
+exports.inviteUser = inviteUser;
+/**
+ * Change User Role (Admin only)
+ * PUT /api/admin/users/:id/role
+ */
+const changeUserRole = async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    const admin = req.user;
+    const validRoles = ['Admin', 'Analyst', 'Viewer', 'Reader'];
+    if (!role || !validRoles.includes(role)) {
+        (0, response_1.sendError)(res, 'A valid role (Admin, Analyst, Viewer, or Reader) is required.', 'ValidationError', 400);
+        return;
+    }
+    try {
+        const user = await User_1.User.findById(id);
+        if (!user) {
+            (0, response_1.sendError)(res, 'User not found.', 'UserNotFoundError', 404);
+            return;
+        }
+        // Prevent non-admin or self-demoting the last admin if applicable
+        const oldRole = user.role;
+        user.role = role;
+        await user.save();
+        // Create Audit Log
+        await AuditLog_1.AuditLog.create({
+            action: 'ChangeRole',
+            adminId: admin._id,
+            targetUserId: user._id,
+            assignedRole: role,
+            details: `Role updated from ${oldRole} to ${role}`,
+            ipAddress: req.ip || '127.0.0.1',
+        });
+        // Notification for the user
+        await Notification_1.Notification.create({
+            userId: user._id,
+            title: 'Role Updated',
+            message: `Your account role has been updated to ${role} by an administrator.`,
+            type: 'info',
+        });
+        (0, response_1.sendSuccess)(res, `User role successfully updated to ${role}.`, {
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                approved: user.approved,
+            },
+        });
+    }
+    catch (error) {
+        logger_1.default.error('[AdminController] Change user role failed:', error.message);
+        (0, response_1.sendError)(res, 'Failed to update user role.', error.message || error, 500);
+    }
+};
+exports.changeUserRole = changeUserRole;
+/**
+ * Delete User (Admin only)
+ * DELETE /api/admin/users/:id
+ */
+const deleteUser = async (req, res) => {
+    const { id } = req.params;
+    const admin = req.user;
+    if (String(admin._id) === String(id)) {
+        (0, response_1.sendError)(res, 'Admins cannot delete their own account from user management.', 'SelfActionError', 400);
+        return;
+    }
+    try {
+        const user = await User_1.User.findByIdAndDelete(id);
+        if (!user) {
+            (0, response_1.sendError)(res, 'User not found.', 'UserNotFoundError', 404);
+            return;
+        }
+        await AuditLog_1.AuditLog.create({
+            action: 'Delete',
+            adminId: admin._id,
+            targetUserId: user._id,
+            details: `Deleted user ${user.email} (${user.name})`,
+            ipAddress: req.ip || '127.0.0.1',
+        });
+        (0, response_1.sendSuccess)(res, `User ${user.name} deleted successfully.`, { id });
+    }
+    catch (error) {
+        logger_1.default.error('[AdminController] Delete user failed:', error.message);
+        (0, response_1.sendError)(res, 'Failed to delete user.', error.message || error, 500);
+    }
+};
+exports.deleteUser = deleteUser;
+/**
+ * Toggle User Block/Unblock Status (Admin only)
+ * PUT /api/admin/users/:id/status
+ */
+const toggleUserStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const admin = req.user;
+    if (!status || !['Approved', 'Rejected'].includes(status)) {
+        (0, response_1.sendError)(res, 'Status must be Approved or Rejected (Blocked).', 'ValidationError', 400);
+        return;
+    }
+    try {
+        const user = await User_1.User.findById(id);
+        if (!user) {
+            (0, response_1.sendError)(res, 'User not found.', 'UserNotFoundError', 404);
+            return;
+        }
+        user.status = status;
+        user.approved = status === 'Approved';
+        await user.save();
+        await AuditLog_1.AuditLog.create({
+            action: status === 'Rejected' ? 'Block' : 'Approve',
+            adminId: admin._id,
+            targetUserId: user._id,
+            details: `User status changed to ${status}`,
+            ipAddress: req.ip || '127.0.0.1',
+        });
+        (0, response_1.sendSuccess)(res, `User status updated to ${status}.`, {
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                status: user.status,
+                approved: user.approved,
+            },
+        });
+    }
+    catch (error) {
+        logger_1.default.error('[AdminController] Toggle user status failed:', error.message);
+        (0, response_1.sendError)(res, 'Failed to update user status.', error.message || error, 500);
+    }
+};
+exports.toggleUserStatus = toggleUserStatus;
 /**
  * Get Audit Logs
  * GET /api/admin/audit-logs

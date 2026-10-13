@@ -5,6 +5,8 @@ const sentimentController_1 = require("../controllers/sentimentController");
 const auth_1 = require("../middleware/auth");
 const validation_1 = require("../middleware/validation");
 const router = (0, express_1.Router)();
-// POST /api/sentiment/analyze - Run analysis on text inputs
+// POST /api/sentiment/analyze - Run LLM / cloud analysis on text inputs
 router.post('/analyze', auth_1.verifyToken, validation_1.sentimentValidation, sentimentController_1.analyze);
+// POST /api/sentiment/ml-analyze - Run Python DL (CNN/LSTM/RoBERTa/Ensemble) analysis
+router.post('/ml-analyze', auth_1.verifyToken, validation_1.sentimentValidation, sentimentController_1.mlAnalyze);
 exports.default = router;

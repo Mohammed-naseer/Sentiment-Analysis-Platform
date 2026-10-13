@@ -15,8 +15,13 @@ exports.config = {
     jwtSecret: process.env.JWT_SECRET || 'super_secret_jwt_key_for_backup_auth',
     mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/ai_sentiment',
     geminiApiKey: process.env.GEMINI_API_KEY || '',
+    geminiModel: process.env.GEMINI_MODEL || '',
     groqApiKey: process.env.GROQ_API_KEY || '',
+    groqModel: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
     huggingfaceApiKey: process.env.HUGGINGFACE_API_KEY || '',
+    hfToken: process.env.HUGGINGFACE_API_KEY || '', // alias kept for InferenceClient
+    hfModel: process.env.HF_MODEL || 'cardiffnlp/twitter-roberta-base-sentiment-latest',
+    firebaseWebApiKey: process.env.FIREBASE_WEB_API_KEY || 'AIzaSyBYM40card84G14rSHEGcFVau4GlcLsOcI',
     firebase: {
         projectId: process.env.FIREBASE_PROJECT_ID || '',
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
@@ -24,6 +29,7 @@ exports.config = {
             ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
             : '',
     },
+    pythonMlServiceUrl: process.env.PYTHON_ML_SERVICE_URL || 'http://localhost:8000',
     smtp: {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.SMTP_PORT || '587', 10),

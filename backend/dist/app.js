@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const path_1 = __importDefault(require("path"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -17,9 +18,17 @@ const historyRoutes_1 = __importDefault(require("./routes/historyRoutes"));
 const dashboardRoutes_1 = __importDefault(require("./routes/dashboardRoutes"));
 const profileRoutes_1 = __importDefault(require("./routes/profileRoutes"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
+const datasetRoutes_1 = __importDefault(require("./routes/datasetRoutes"));
+const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
+const multimodalRoutes_1 = __importDefault(require("./routes/multimodalRoutes"));
+const visionRoutes_1 = __importDefault(require("./routes/visionRoutes"));
+const productRoutes_1 = __importDefault(require("./routes/productRoutes"));
+const inquiryRoutes_1 = __importDefault(require("./routes/inquiryRoutes"));
 const app = (0, express_1.default)();
 // 1. Security Middlewares
-app.use((0, helmet_1.default)());
+app.use((0, helmet_1.default)({
+    crossOriginOpenerPolicy: { policy: "unsafe-none" },
+}));
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
         if (!origin)
@@ -71,12 +80,19 @@ app.get('/health', (_req, res) => {
     });
 });
 // 5. Mount API Routes
+app.use('/uploads/images', express_1.default.static(path_1.default.join(__dirname, '../uploads/images')));
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/sentiment', sentimentRoutes_1.default);
 app.use('/api/history', historyRoutes_1.default);
 app.use('/api/dashboard', dashboardRoutes_1.default);
 app.use('/api/profile', profileRoutes_1.default);
 app.use('/api/admin', adminRoutes_1.default);
+app.use('/api/datasets', datasetRoutes_1.default);
+app.use('/api/health', healthRoutes_1.default);
+app.use('/api/multimodal', multimodalRoutes_1.default);
+app.use('/api/vision', visionRoutes_1.default);
+app.use('/api/products', productRoutes_1.default);
+app.use('/api/inquiries', inquiryRoutes_1.default);
 // 6. 404 Route Handler
 app.use(errorHandler_1.notFoundHandler);
 // 7. Global Error Handler Middleware

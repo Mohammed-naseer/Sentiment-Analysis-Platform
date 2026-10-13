@@ -44,6 +44,7 @@ export const googleLoginValidation = [
 
 export const sentimentValidation = [
   body('text').trim().notEmpty().withMessage('Text content is required for analysis.'),
+  body('text').isLength({ max: 8000 }).withMessage('Text exceeds maximum length of 8,000 characters. Please shorten the input.'),
   validateRequest
 ];
 

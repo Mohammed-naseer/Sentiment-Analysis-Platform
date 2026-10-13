@@ -1,0 +1,36 @@
+# Python Deep Learning & NLP Service
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Model Weights and Checkpoints (too large for Git)
+models/*.pt
+models/*.pth
+models/*.bin
+models/*.safetensors
+models/roberta/
+models/emotion/
+
+# Datasets
+data/raw/
+data/processed/
+*.csv
+!data/sample_sentiment_benchmark.csv
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Environment Variables
+.env
+.env.local
+
+# Logs and Scratch Files
+*.log
+scratch/

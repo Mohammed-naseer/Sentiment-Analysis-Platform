@@ -21,7 +21,11 @@ router.put('/notifications/:id/read', adminController_1.markNotificationRead);
 // Admin-only endpoints
 router.use(auth_1.verifyAdmin);
 router.get('/users', adminController_1.getUsers);
+router.post('/users/invite', adminController_1.inviteUser);
 router.post('/users/:id/approve', adminController_1.approveUser);
 router.post('/users/:id/reject', adminController_1.rejectUser);
+router.put('/users/:id/role', adminController_1.changeUserRole);
+router.put('/users/:id/status', adminController_1.toggleUserStatus);
+router.delete('/users/:id', adminController_1.deleteUser);
 router.get('/audit-logs', adminController_1.getAuditLogs);
 exports.default = router;

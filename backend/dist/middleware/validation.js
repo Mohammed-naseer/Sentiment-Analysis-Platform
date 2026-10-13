@@ -37,6 +37,7 @@ exports.googleLoginValidation = [
 ];
 exports.sentimentValidation = [
     (0, express_validator_1.body)('text').trim().notEmpty().withMessage('Text content is required for analysis.'),
+    (0, express_validator_1.body)('text').isLength({ max: 8000 }).withMessage('Text exceeds maximum length of 8,000 characters. Please shorten the input.'),
     exports.validateRequest
 ];
 exports.profileUpdateValidation = [

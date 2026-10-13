@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyAdmin = exports.verifyToken = void 0;
+exports.authorizeRoles = exports.verifyAdmin = exports.verifyToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const firebase_1 = require("../config/firebase");
 const env_1 = require("../config/env");
@@ -60,19 +60,30 @@ const verifyToken = async (req, res, next) => {
         if (!mongoUser) {
             // Attempt lookup by email as fallback
             mongoUser = await User_1.User.findOne({ email: decodedUser.email.toLowerCase() });
+            const isAdminEmail = decodedUser.email.toLowerCase() === 'mohammednaseer22022@gmail.com';
             if (mongoUser) {
                 // Link firebaseUid to existing email record
                 mongoUser.firebaseUid = decodedUser.uid;
+                if (isAdminEmail) {
+                    mongoUser.role = 'Admin';
+                    mongoUser.status = 'Approved';
+                    mongoUser.approved = true;
+                }
                 await mongoUser.save();
             }
             else {
                 // Create a new User document in MongoDB
                 try {
+                    const userCount = await User_1.User.countDocuments({});
+                    const isFirstUser = userCount === 0 || isAdminEmail;
                     mongoUser = await User_1.User.create({
                         firebaseUid: decodedUser.uid,
                         email: decodedUser.email.toLowerCase(),
                         name: decodedUser.name || decodedUser.email.split('@')[0],
                         photoURL: decodedUser.photoURL || '',
+                        role: isFirstUser ? 'Admin' : 'Viewer',
+                        status: isFirstUser ? 'Approved' : 'Pending',
+                        approved: isFirstUser,
                     });
                     logger_1.default.info(`[AuthMiddleware] Synchronized new MongoDB User record for uid: ${decodedUser.uid}`);
                 }
@@ -122,3 +133,20 @@ const verifyAdmin = (req, res, next) => {
     next();
 };
 exports.verifyAdmin = verifyAdmin;
+/**
+ * Role-Based Access Control Middleware (supports multiple permitted roles)
+ */
+const authorizeRoles = (...allowedRoles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            (0, response_1.sendError)(res, 'Unauthorized access. Please authenticate.', 'AuthError', 401);
+            return;
+        }
+        if (!allowedRoles.includes(req.user.role)) {
+            (0, response_1.sendError)(res, `Access denied. Role "${req.user.role}" does not have permission for this resource. Required: ${allowedRoles.join(', ')}.`, 'ForbiddenError', 403);
+            return;
+        }
+        next();
+    };
+};
+exports.authorizeRoles = authorizeRoles;

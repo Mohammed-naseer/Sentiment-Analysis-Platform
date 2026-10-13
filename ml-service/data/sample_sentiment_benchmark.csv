@@ -1,0 +1,21 @@
+text,sentiment,emotion
+"The sound quality of these noise-cancelling headphones is phenomenal and battery lasts 30 hours!",Positive,Joy
+"Terrible customer service. Item arrived 2 weeks late and broken into pieces.",Negative,Anger
+"The laptop is okay for basic browsing but heats up quickly when running multiple apps.",Neutral,Disappointment
+"Absolutely love the sleek design and ultra crisp display. Best purchase this year!",Positive,Love
+"Extremely frustrated with the constant software crashes and lack of support.",Negative,Frustration
+"The packaging was neat and delivery was on schedule. Standard product performance.",Neutral,Surprise
+"I was skeptical at first, but this espresso machine exceeded all my expectations.",Positive,Joy
+"Worst purchase ever. Stopped working after 3 days and refund was refused.",Negative,Anger
+"Average build quality for the price. Not great, not terrible either.",Neutral,Disappointment
+"Super fast shipping, brilliant customer assistance, and high quality material.",Positive,Appreciation
+"The app keeps freezing during checkout. Very annoying experience.",Negative,Frustration
+"Screen resolution is decent, but battery life is shorter than advertised.",Mixed,Disappointment
+"Fantastic build quality with intuitive user interface. Highly recommended!",Positive,Joy
+"Missing parts upon arrival and instructions were completely incomprehensible.",Negative,Complaint
+"Neutral feelings about this update. Some features improved, others got slower.",Neutral,Neutral
+"The camera takes great photos in daylight but struggles in low light conditions.",Mixed,Disappointment
+"Unbelievably good value for money. Surpassed all competing brands.",Positive,Joy
+"Horrible delay in shipping and the package was crushed upon delivery.",Negative,Delivery Issue
+"Does what it says on the box. Nothing extraordinary.",Neutral,Neutral
+"Outstanding sound clarity, but the ear cushions hurt after two hours.",Mixed,Disappointment

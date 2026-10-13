@@ -109,7 +109,11 @@ export const sendAdminRegistrationRequest = async (
     await client.sendMail(mailOptions);
     logger.info(`[EmailService] Admin registration request email sent for: ${user.email}`);
   } catch (error: any) {
-    logger.error('[EmailService] Error sending admin notification email:', error.message);
+    logger.error('[EmailService] SMTP error sending admin notification email:', error.message);
+    logger.info('📩 [FALLBACK CONSOLE NOTIFICATION]');
+    logger.info(`TO: ${mailOptions.to}`);
+    logger.info(`SUBJECT: ${mailOptions.subject}`);
+    logger.info(`TEXT:\n${mailOptions.text}`);
   }
 };
 
@@ -181,3 +185,124 @@ export const sendUserRejectionEmail = async (user: { name: string; email: string
     logger.error('[EmailService] Error sending rejection email:', error.message);
   }
 };
+
+/**
+ * Send Workspace Invitation Email (To Invitee)
+ */
+export const sendInvitationEmail = async (
+  invitee: { email: string; role: string; invitedByName: string },
+  inviteToken: string
+): Promise<boolean> => {
+  const roleColor = roleColors[invitee.role]?.bg || '#6366f1';
+  const acceptUrl = `${BASE_URL.replace(':5001', ':5173')}/signup?invite=${inviteToken}&email=${encodeURIComponent(invitee.email)}&role=${invitee.role}`;
+
+  const mailOptions = {
+    from: SMTP_FROM,
+    to: invitee.email,
+    subject: '📨 You have been invited to Lumina AI Intelligence Platform',
+    text: `Hello,\n\n${invitee.invitedByName} has invited you to join Lumina AI as an ${invitee.role}.\n\nAccept your invitation and activate your account:\n${acceptUrl}\n\nThis invitation link expires in 7 days.`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px;background:#ffffff">
+        <h2 style="color:#6366f1;border-bottom:2px solid #6366f1;padding-bottom:10px;margin-top:0">Workspace Invitation 📨</h2>
+        <p style="color:#374151">Hello,</p>
+        <p style="color:#374151"><strong>${invitee.invitedByName}</strong> has invited you to join the <strong>Lumina AI Sentiment Analysis & Customer Intelligence Platform</strong>.</p>
+        
+        <div style="background:#f8fafc;border-left:4px solid ${roleColor};padding:14px 18px;margin:20px 0;border-radius:6px">
+          <strong style="color:#374151">Assigned Role:</strong>
+          <span style="font-weight:700;color:${roleColor};font-size:15px;margin-left:6px">${invitee.role}</span>
+        </div>
+
+        <p style="color:#374151">Click the button below to complete your registration and access the workspace:</p>
+        <div style="margin:24px 0">
+          <a href="${acceptUrl}" style="background:#6366f1;color:#ffffff;padding:12px 28px;text-decoration:none;border-radius:8px;font-weight:700;display:inline-block">Accept Invitation & Get Started →</a>
+        </div>
+
+        <p style="color:#6b7280;font-size:12px">This invitation link will expire in 7 days.</p>
+        <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
+        <p style="color:#9ca3af;font-size:11px;margin:0">Lumina AI Platform · Mohammed Naseeruddin · mohammednaseer22022@gmail.com</p>
+      </div>
+    `,
+  };
+
+  try {
+    const client = await getTransporter();
+    await client.sendMail(mailOptions);
+    logger.info(`[EmailService] Invitation email successfully sent to: ${invitee.email}`);
+    return true;
+  } catch (error: any) {
+    logger.error('[EmailService] Failed to send invitation email:', error.message);
+    return false;
+  }
+};
+
+/**
+ * Send Customer Submission Notification (Talks to Intelligence / Contact Form) To Admin
+ */
+export const sendCustomerInquiryNotification = async (inquiry: {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  product?: string;
+  message: string;
+  createdAt?: Date;
+}): Promise<boolean> => {
+  const mailOptions = {
+    from: SMTP_FROM,
+    to: ADMIN_EMAIL,
+    subject: `💬 New Talks to Intelligence Submission from ${inquiry.name}`,
+    text: `New Customer Inquiry Received:\n\nName: ${inquiry.name}\nEmail: ${inquiry.email}\nPhone: ${inquiry.phone || 'N/A'}\nCompany: ${inquiry.company || 'N/A'}\nProduct: ${inquiry.product || 'General'}\nSubmitted At: ${(inquiry.createdAt || new Date()).toLocaleString()}\n\nMessage:\n${inquiry.message}\n`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px;background:#ffffff">
+        <h2 style="color:#0ea5e9;border-bottom:2px solid #0ea5e9;padding-bottom:10px;margin-top:0">💬 New Talks to Intelligence Submission</h2>
+        <p style="color:#374151">A customer has submitted feedback through the <strong>Talks to Intelligence</strong> portal.</p>
+
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;border-radius:8px;overflow:hidden">
+          <tr style="background:#f9fafb">
+            <td style="padding:10px 14px;font-weight:700;color:#374151;width:150px;border-bottom:1px solid #e5e7eb">Customer Name</td>
+            <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb">${inquiry.name}</td>
+          </tr>
+          <tr style="background:#ffffff">
+            <td style="padding:10px 14px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb">Email Address</td>
+            <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb"><a href="mailto:${inquiry.email}" style="color:#6366f1">${inquiry.email}</a></td>
+          </tr>
+          <tr style="background:#f9fafb">
+            <td style="padding:10px 14px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb">Phone Number</td>
+            <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb">${inquiry.phone || 'Not provided'}</td>
+          </tr>
+          <tr style="background:#ffffff">
+            <td style="padding:10px 14px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb">Company / Org</td>
+            <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb">${inquiry.company || 'Not provided'}</td>
+          </tr>
+          <tr style="background:#f9fafb">
+            <td style="padding:10px 14px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb">Product / Interest</td>
+            <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb">${inquiry.product || 'General'}</td>
+          </tr>
+          <tr style="background:#ffffff">
+            <td style="padding:10px 14px;font-weight:700;color:#374151">Submission Time</td>
+            <td style="padding:10px 14px;color:#111827">${(inquiry.createdAt || new Date()).toLocaleString()}</td>
+          </tr>
+        </table>
+
+        <div style="background:#f0fdf4;border-left:4px solid #0ea5e9;padding:14px 18px;margin:20px 0;border-radius:6px">
+          <strong style="color:#0369a1">Customer Message / Feedback:</strong>
+          <p style="color:#1e293b;margin:8px 0 0;line-height:1.6;white-space:pre-wrap">${inquiry.message}</p>
+        </div>
+
+        <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb"/>
+        <p style="color:#9ca3af;font-size:11px;margin:0">Lumina AI Platform · Automated Inquiry Dispatch · Administrator: Mohammed Naseeruddin</p>
+      </div>
+    `,
+  };
+
+  try {
+    const client = await getTransporter();
+    await client.sendMail(mailOptions);
+    logger.info(`[EmailService] Admin customer inquiry notification sent to: ${ADMIN_EMAIL}`);
+    return true;
+  } catch (error: any) {
+    logger.error('[EmailService] Failed to send admin customer inquiry notification email:', error.message);
+    return false;
+  }
+};
+

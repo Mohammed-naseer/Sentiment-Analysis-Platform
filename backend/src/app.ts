@@ -1,3 +1,4 @@
+import path from 'path';
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -14,11 +15,21 @@ import historyRoutes from './routes/historyRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import profileRoutes from './routes/profileRoutes';
 import adminRoutes from './routes/adminRoutes';
+import datasetRoutes from './routes/datasetRoutes';
+import healthRoutes from './routes/healthRoutes';
+import multimodalRoutes from './routes/multimodalRoutes';
+import visionRoutes from './routes/visionRoutes';
+import productRoutes from './routes/productRoutes';
+import inquiryRoutes from './routes/inquiryRoutes';
 
 const app: Express = express();
 
 // 1. Security Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "unsafe-none" },
+  })
+);
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -75,12 +86,20 @@ app.get('/health', (_req, res) => {
 });
 
 // 5. Mount API Routes
+app.use('/uploads/images', express.static(path.join(__dirname, '../uploads/images')));
 app.use('/api/auth', authRoutes);
 app.use('/api/sentiment', sentimentRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/datasets', datasetRoutes);
+app.use('/api/health', healthRoutes);
+app.use('/api/multimodal', multimodalRoutes);
+app.use('/api/vision', visionRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/inquiries', inquiryRoutes);
+
 
 // 6. 404 Route Handler
 app.use(notFoundHandler);

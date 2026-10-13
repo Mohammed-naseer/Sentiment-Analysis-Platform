@@ -68,19 +68,31 @@ export const verifyToken = async (
     if (!mongoUser) {
       // Attempt lookup by email as fallback
       mongoUser = await User.findOne({ email: decodedUser.email.toLowerCase() });
+
+      const isAdminEmail = decodedUser.email.toLowerCase() === 'mohammednaseer22022@gmail.com';
       
       if (mongoUser) {
         // Link firebaseUid to existing email record
         mongoUser.firebaseUid = decodedUser.uid;
+        if (isAdminEmail) {
+          mongoUser.role = 'Admin';
+          mongoUser.status = 'Approved';
+          mongoUser.approved = true;
+        }
         await mongoUser.save();
       } else {
         // Create a new User document in MongoDB
         try {
+          const userCount = await User.countDocuments({});
+          const isFirstUser = userCount === 0 || isAdminEmail;
           mongoUser = await User.create({
             firebaseUid: decodedUser.uid,
             email: decodedUser.email.toLowerCase(),
             name: decodedUser.name || decodedUser.email.split('@')[0],
             photoURL: decodedUser.photoURL || '',
+            role: isFirstUser ? 'Admin' : 'Viewer',
+            status: isFirstUser ? 'Approved' : 'Pending',
+            approved: isFirstUser,
           });
           logger.info(`[AuthMiddleware] Synchronized new MongoDB User record for uid: ${decodedUser.uid}`);
         } catch (dbError: any) {
@@ -90,6 +102,7 @@ export const verifyToken = async (
         }
       }
     }
+
 
     // Check if user is approved
     if (!mongoUser.approved) {
@@ -134,3 +147,28 @@ export const verifyAdmin = (
   }
   next();
 };
+
+/**
+ * Role-Based Access Control Middleware (supports multiple permitted roles)
+ */
+export const authorizeRoles = (...allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      sendError(res, 'Unauthorized access. Please authenticate.', 'AuthError', 401);
+      return;
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      sendError(
+        res,
+        `Access denied. Role "${req.user.role}" does not have permission for this resource. Required: ${allowedRoles.join(', ')}.`,
+        'ForbiddenError',
+        403
+      );
+      return;
+    }
+
+    next();
+  };
+};
+

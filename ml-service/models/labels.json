@@ -1,0 +1,10 @@
+{
+  "classes": [
+    "Negative",
+    "Positive"
+  ],
+  "label2idx": {
+    "Negative": 0,
+    "Positive": 1
+  }
+}

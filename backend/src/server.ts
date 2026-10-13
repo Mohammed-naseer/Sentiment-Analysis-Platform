@@ -7,12 +7,14 @@ import app from './app';
 
 import { config, validateConfig } from './config/env';
 import { connectDB, disconnectDB } from './config/database';
+import { logStartupAIHealth } from './services/aiHealthService';
 
 /**
  * Main Bootstrap Entry Point
  * 1. Validate environment variables
  * 2. Connect to MongoDB Atlas
  * 3. Start HTTP server
+ * 4. Run AI provider health check
  */
 const bootstrap = async (): Promise<void> => {
   // Step 1: Run environment variable validation and log warnings
@@ -30,6 +32,11 @@ const bootstrap = async (): Promise<void> => {
     console.log(`🗄️  Database: MongoDB Atlas`);
     console.log(`🤖 AI Models: Gemini | Groq | HuggingFace`);
     console.log('=================================');
+  });
+
+  // Step 4: AI provider health check (runs after server is up, non-blocking)
+  logStartupAIHealth().catch((err) => {
+    console.error('[Server] AI health check error during startup:', err?.message);
   });
 
   // Graceful shutdown handlers

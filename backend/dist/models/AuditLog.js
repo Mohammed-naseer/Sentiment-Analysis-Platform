@@ -6,7 +6,7 @@ const AuditLogSchema = new mongoose_1.Schema({
     action: {
         type: String,
         required: true,
-        enum: ['Approve', 'Reject'],
+        enum: ['Approve', 'Reject', 'ChangeRole', 'Invite', 'Block', 'Delete'],
     },
     adminId: {
         type: mongoose_1.Schema.Types.ObjectId,
@@ -23,6 +23,10 @@ const AuditLogSchema = new mongoose_1.Schema({
         default: '',
     },
     rejectionReason: {
+        type: String,
+        default: '',
+    },
+    details: {
         type: String,
         default: '',
     },

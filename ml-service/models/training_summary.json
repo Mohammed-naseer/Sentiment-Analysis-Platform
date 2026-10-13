@@ -1,0 +1,22 @@
+{
+  "dataset": "IMDB Large Movie Review Dataset (aclImdb)",
+  "train_samples": 5000,
+  "test_samples": 1200,
+  "vocab_size": 20000,
+  "classes": [
+    "Negative",
+    "Positive"
+  ],
+  "cnn_metrics": {
+    "accuracy": 0.7433,
+    "macro_f1": 0.7406
+  },
+  "lstm_metrics": {
+    "accuracy": 0.6108,
+    "macro_f1": 0.6088
+  },
+  "ensemble_metrics": {
+    "accuracy": 0.7133,
+    "macro_f1": 0.7133
+  }
+}

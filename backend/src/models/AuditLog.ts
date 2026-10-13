@@ -1,11 +1,12 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface IAuditLog extends Document {
-  action: 'Approve' | 'Reject';
+  action: 'Approve' | 'Reject' | 'ChangeRole' | 'Invite' | 'Block' | 'Delete';
   adminId: Schema.Types.ObjectId;
-  targetUserId: Schema.Types.ObjectId;
+  targetUserId?: Schema.Types.ObjectId;
   assignedRole?: string;
   rejectionReason?: string;
+  details?: string;
   ipAddress: string;
   createdAt: Date;
 }
@@ -15,7 +16,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
     action: {
       type: String,
       required: true,
-      enum: ['Approve', 'Reject'],
+      enum: ['Approve', 'Reject', 'ChangeRole', 'Invite', 'Block', 'Delete'],
     },
     adminId: {
       type: Schema.Types.ObjectId,
@@ -32,6 +33,10 @@ const AuditLogSchema = new Schema<IAuditLog>(
       default: '',
     },
     rejectionReason: {
+      type: String,
+      default: '',
+    },
+    details: {
       type: String,
       default: '',
     },

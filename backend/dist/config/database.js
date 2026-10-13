@@ -43,7 +43,7 @@ let mongod = null;
 const connectDB = async () => {
     try {
         const conn = await mongoose_1.default.connect(env_1.config.mongodbUri, {
-            serverSelectionTimeoutMS: 5000, // 5s timeout to trigger faster fallback
+            serverSelectionTimeoutMS: 15000, // 15s timeout for Atlas connection
         });
         console.log(`[Database] MongoDB Connected: ${conn.connection.host}`);
     }
@@ -58,6 +58,19 @@ const connectDB = async () => {
                 await mongoose_1.default.connect(uri);
                 console.log(`\x1b[32m[Database] Local In-Memory MongoDB Connected successfully!\x1b[0m`);
                 console.log(`[Database] Connection URI: ${uri}`);
+                // Seed default Admin user in local in-memory DB
+                const { User } = await Promise.resolve().then(() => __importStar(require('../models/User')));
+                await User.findOneAndUpdate({ email: 'mohammednaseer22022@gmail.com' }, {
+                    $set: {
+                        name: 'Mohammed Naseer',
+                        email: 'mohammednaseer22022@gmail.com',
+                        firebaseUid: 'mock_uid_mohammednaseer22022_gmail_com',
+                        role: 'Admin',
+                        status: 'Approved',
+                        approved: true,
+                    },
+                }, { upsert: true, new: true });
+                console.log('[Database] Auto-seeded Admin user (mohammednaseer22022@gmail.com) in In-Memory DB.');
             }
             catch (memError) {
                 console.error(`\x1b[31m[Database] Failed to start in-memory MongoDB Server:\x1b[0m`, memError.message);

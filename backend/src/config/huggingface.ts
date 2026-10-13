@@ -1,11 +1,24 @@
+/**
+ * Hugging Face Configuration
+ * ─────────────────────────────────────────────────────────────
+ * Uses the official @huggingface/inference InferenceClient.
+ * Backward-compatible: reads HUGGINGFACE_API_KEY (existing name).
+ * Model is configurable via HF_MODEL env var.
+ *
+ * No token is ever logged.
+ */
+
+import { InferenceClient } from '@huggingface/inference';
 import { config } from './env';
 
+let hfClient: InferenceClient | null = null;
 let isHuggingFaceInitialized = false;
 
 try {
-  if (config.huggingfaceApiKey && config.huggingfaceApiKey !== 'mock-or-replace-with-real-key') {
+  if (config.hfToken && config.hfToken !== 'mock-or-replace-with-real-key') {
+    hfClient = new InferenceClient(config.hfToken);
     isHuggingFaceInitialized = true;
-    console.log('[HuggingFace] Hugging Face client configured successfully.');
+    console.log('[HuggingFace] InferenceClient initialized successfully.');
   } else {
     throw new Error('Missing or default HUGGINGFACE_API_KEY environment variable.');
   }
@@ -15,8 +28,8 @@ try {
 }
 
 export const huggingFaceConfig = {
-  apiKey: config.huggingfaceApiKey,
   isInitialized: isHuggingFaceInitialized,
-  sentimentModel: 'distilbert-base-uncased-finetuned-sst-2-english', // standard model
-  apiUrl: 'https://api-inference.huggingface.co/models/'
+  hfModel: config.hfModel,
+  /** InferenceClient instance — use for all requests, never expose the token */
+  client: hfClient,
 };

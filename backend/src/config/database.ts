@@ -21,6 +21,25 @@ export const connectDB = async (): Promise<void> => {
         await mongoose.connect(uri);
         console.log(`\x1b[32m[Database] Local In-Memory MongoDB Connected successfully!\x1b[0m`);
         console.log(`[Database] Connection URI: ${uri}`);
+
+        // Seed default Admin user in local in-memory DB
+        const { User } = await import('../models/User');
+        await User.findOneAndUpdate(
+          { email: 'mohammednaseer22022@gmail.com' },
+          {
+            $set: {
+              name: 'Mohammed Naseer',
+              email: 'mohammednaseer22022@gmail.com',
+              firebaseUid: 'mock_uid_mohammednaseer22022_gmail_com',
+              role: 'Admin',
+              status: 'Approved',
+              approved: true,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        console.log('[Database] Auto-seeded Admin user (mohammednaseer22022@gmail.com) in In-Memory DB.');
+
       } catch (memError: any) {
         console.error(`\x1b[31m[Database] Failed to start in-memory MongoDB Server:\x1b[0m`, memError.message);
         console.warn(`\x1b[33m[Database] Running with database errors. Database models will not function.\x1b[0m`);

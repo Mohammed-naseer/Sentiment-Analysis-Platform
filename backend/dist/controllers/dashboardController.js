@@ -114,12 +114,6 @@ const getStats = async (req, res) => {
                 }
             }
         });
-        // 4. Agreement Distribution Analytics
-        const agreementDistribution = {
-            agreement100: records.filter(r => r.agreementPercentage === 100).length,
-            agreement66: records.filter(r => r.agreementPercentage === 66).length,
-            agreement33: records.filter(r => r.agreementPercentage === 33).length,
-        };
         // 5. Avg confidence per provider
         let geminiAvgConf = 0;
         let groqAvgConf = 0;
@@ -141,12 +135,18 @@ const getStats = async (req, res) => {
             },
             weeklyStatistics: weeklyStats,
             monthlyStatistics: monthlyStats,
-            agreementDistribution,
-            providerMetrics: {
-                gemini: { averageConfidence: geminiAvgConf, count: geminiConfCount },
-                groq: { averageConfidence: groqAvgConf, count: groqConfCount },
-                huggingface: { averageConfidence: hfAvgConf, count: hfConfCount }
-            }
+            // Array format: [{ level, count }] — matches frontend interface
+            agreementDistribution: [
+                { level: '100% Agreement', count: records.filter(r => r.agreementPercentage === 100).length },
+                { level: '66% Agreement', count: records.filter(r => r.agreementPercentage === 66).length },
+                { level: '33% Agreement', count: records.filter(r => r.agreementPercentage === 33).length },
+            ],
+            // Array format: [{ provider, avgConfidence, count }] — matches frontend interface
+            providerMetrics: [
+                { provider: 'Gemini', avgConfidence: geminiAvgConf, count: geminiConfCount },
+                { provider: 'Groq', avgConfidence: groqAvgConf, count: groqConfCount },
+                { provider: 'HuggingFace', avgConfidence: hfAvgConf, count: hfConfCount },
+            ],
         };
         (0, response_1.sendSuccess)(res, 'Dashboard statistics retrieved successfully.', payload);
     }

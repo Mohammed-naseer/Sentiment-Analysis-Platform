@@ -112,13 +112,6 @@ export const getStats = async (req: Request, res: Response): Promise<void> => {
       }
     });
 
-    // 4. Agreement Distribution Analytics
-    const agreementDistribution = {
-      agreement100: records.filter(r => r.agreementPercentage === 100).length,
-      agreement66: records.filter(r => r.agreementPercentage === 66).length,
-      agreement33: records.filter(r => r.agreementPercentage === 33).length,
-    };
-
     // 5. Avg confidence per provider
     let geminiAvgConf = 0;
     let groqAvgConf = 0;
